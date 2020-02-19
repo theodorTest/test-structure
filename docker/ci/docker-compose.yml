@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+    mysql_ci:
+        container_name: maintenance-mysql-ci
+        image: mysql:5.7
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: maintenance
+            MYSQL_USER: maintenance
+            MYSQL_PASSWORD: password
+
+    test:
+        build:
+            context: ../dev/test
+        container_name: test-ci
+        depends_on:
+            - maintenance_redis_ci
+        volumes:
+            - ../../:/test
+        environment:
+            REDIS_HOST: maintenance_redis_ci
+            REDIS_PORT: 6379
+            REDIS_PASSWORD: redislocal
+            REDIS_DATABASE: 0
+            TIMEZONE: 'Europe/London'
+            MYSQL_HOST: maintenance_mysql_ci
+            MYSQL_PORT: 3306
+            MYSQL_DATABASE: maintenance
+            MYSQL_USER: maintenance
+            MYSQL_PASSWORD: password
+        command: 'docker/ci/run-tests.sh'
+        working_dir: '/test'
+
+    maintenance_redis_ci:
+        image: redis:4-alpine
+        container_name: maintenance-redis-ci
+        command: ["redis-server", "--requirepass", "redislocal"]
